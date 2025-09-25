@@ -28,9 +28,17 @@ class DiscountCodeController extends Controller
             'code' => 'required|string|max:50|unique:discount_codes,code',
             'type' => 'required|in:percent,amount',
             'value' => 'required|numeric|min:0',
+            'min_order_value' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
+        
+        // Đảm bảo min_order_value là số nguyên nếu được nhập
+        if (isset($data['min_order_value'])) {
+            $data['min_order_value'] = (float)$data['min_order_value'];
+        } else {
+            $data['min_order_value'] = 0;
+        }
         $discount = DiscountCode::create($data);
         return redirect()->route('admin.discounts.index')->with('success', 'Tạo mã giảm giá thành công');
     }
@@ -46,9 +54,17 @@ class DiscountCodeController extends Controller
             'code' => 'required|string|max:50|unique:discount_codes,code,'.$discount->id,
             'type' => 'required|in:percent,amount',
             'value' => 'required|numeric|min:0',
+            'min_order_value' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
+        
+        // Đảm bảo min_order_value là số nguyên nếu được nhập
+        if (isset($data['min_order_value'])) {
+            $data['min_order_value'] = (float)$data['min_order_value'];
+        } else {
+            $data['min_order_value'] = 0;
+        }
         $discount->update($data);
         return redirect()->route('admin.discounts.index')->with('success', 'Cập nhật mã giảm giá thành công');
     }

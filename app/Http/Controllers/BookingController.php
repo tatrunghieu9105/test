@@ -65,13 +65,14 @@ class BookingController extends Controller
     /**
      * Hiển thị trang chọn ghế
      */
-    public function create($showtimeId)
+    public function create($showtimeId, Request $request)
     {
         $showtime = Showtime::with(['room', 'movie'])->findOrFail($showtimeId);
         $room = $showtime->room;
         
         // Lấy danh sách ghế đã đặt
         $bookedSeatIds = Ticket::where('showtime_id', $showtime->id)
+            ->whereIn('status', ['pending_cash', 'pending_online', 'paid_cash', 'paid_online', 'used'])
             ->pluck('seat_id')
             ->toArray();
 
@@ -100,6 +101,13 @@ class BookingController extends Controller
                   ->orWhere('end_date', '>=', now());
             })
             ->get();
+            
+        // Lấy thông báo lỗi từ session nếu có
+        if ($request->session()->has('error')) {
+            $errors = new \Illuminate\Support\MessageBag();
+            $errors->add('discount_code', $request->session()->get('error'));
+            view()->share('errors', $errors);
+        }
 
         return view('client.bookings.seats', [
             'showtime' => $showtime,
@@ -145,6 +153,10 @@ class BookingController extends Controller
             if (!empty($validated['discount_code'])) {
                 $discount = DiscountCode::where('code', $validated['discount_code'])
                     ->where('is_active', true)
+                    ->where(function($q) use ($totalAmount) {
+                        $q->where('min_order_value', '<=', $totalAmount)
+                          ->orWhere('min_order_value', 0);
+                    })
                     ->where(function($q) {
                         $q->whereNull('start_date')
                           ->orWhere('start_date', '<=', now());
@@ -156,6 +168,11 @@ class BookingController extends Controller
                     ->first();
 
                 if ($discount) {
+                    // Kiểm tra lại điều kiện giá trị đơn hàng tối thiểu
+                    if ($discount->min_order_value > 0 && $totalAmount < $discount->min_order_value) {
+                        return back()->with('error', 'Đơn hàng tối thiểu phải đạt ' . number_format($discount->min_order_value) . ' VNĐ để sử dụng mã khuyến mãi này.');
+                    }
+                    
                     $discountAmount = $discount->type === 'percent' 
                         ? round($totalAmount * $discount->value / 100, 2)
                         : $discount->value;
@@ -165,11 +182,18 @@ class BookingController extends Controller
                     }
                     
                     $discountCode = $discount->code;
+                } else {
+                    return back()->with('error', 'Mã khuyến mãi không hợp lệ, đã hết hạn hoặc không đủ điều kiện áp dụng.');
                 }
             }
 
             // Tính tổng tiền cuối cùng
             $finalAmount = max(0, $totalAmount - $discountAmount);
+            
+            // Tính giá mỗi vé sau khi áp dụng giảm giá
+            $numSeats = count($validated['seat_ids']);
+            $seatPrice = $showtime->price;
+            $totalDiscountPerSeat = $discountAmount / $numSeats;
             
             // Lưu thông tin vào session để sử dụng ở bước thanh toán
             $bookingData = [
@@ -178,6 +202,7 @@ class BookingController extends Controller
                 'total_amount' => $totalAmount,
                 'discount_code' => $discountCode,
                 'discount_amount' => $discountAmount,
+                'discount_per_seat' => $totalDiscountPerSeat, // Lưu số tiền giảm giá cho mỗi vé
                 'final_amount' => $finalAmount,
                 'combo_id' => $validated['combo_id'] ?? null,
             ];

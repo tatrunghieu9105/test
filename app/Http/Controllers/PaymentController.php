@@ -32,8 +32,47 @@ class PaymentController extends Controller
         }
 
         $discount = null;
-        if (!empty($data['discount_code'])) {
-            $discount = \App\Models\DiscountCode::where('code', $data['discount_code'])->first();
+        $discountAmount = 0;
+        $totalAmount = 0;
+        $showtime = null;
+        
+        if (!empty($data['discount_code']) || !empty($data['discount_amount'])) {
+            // Lấy thông tin suất chiếu
+            $showtime = \App\Models\Showtime::findOrFail($data['showtime_id']);
+            
+            // Tính tổng giá trị đơn hàng (số ghế * giá vé)
+            $totalAmount = count($data['seat_ids']) * $showtime->price;
+            
+            if (!empty($data['discount_code'])) {
+                // Kiểm tra mã giảm giá
+                $discount = \App\Models\DiscountCode::where('code', $data['discount_code'])
+                    ->where(function($query) use ($totalAmount) {
+                        $query->where('min_order_value', '<=', $totalAmount)
+                              ->orWhere('min_order_value', 0);
+                    })
+                    ->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now())
+                    ->first();
+                    
+                if (!$discount) {
+                    return back()->with('error', 'Mã khuyến mãi không hợp lệ, đã hết hạn hoặc không đủ điều kiện áp dụng.');
+                }
+                
+                // Kiểm tra lại điều kiện giá trị đơn hàng tối thiểu
+                if ($discount->min_order_value > 0 && $totalAmount < $discount->min_order_value) {
+                    return back()->with('error', 'Đơn hàng tối thiểu phải đạt ' . number_format($discount->min_order_value) . ' VNĐ để sử dụng mã khuyến mãi này.');
+                }
+                
+                // Tính toán số tiền giảm giá
+                if ($discount->type === 'percent') {
+                    $discountAmount = round($totalAmount * $discount->value / 100, 2);
+                } else {
+                    $discountAmount = min($discount->value, $totalAmount);
+                }
+            } elseif (!empty($data['discount_amount'])) {
+                // Nếu có truyền trực tiếp số tiền giảm giá từ session
+                $discountAmount = min($data['discount_amount'], $totalAmount);
+            }
         }
         $combo = null;
         if (!empty($data['combo_id'])) {
@@ -41,16 +80,21 @@ class PaymentController extends Controller
         }
         $numSeats = max(1, count($data['seat_ids']));
         $tickets = [];
-        DB::transaction(function () use (&$tickets, $data, $discount, $combo, $numSeats) {
+        
+        // Nếu không có showtime từ trước, lấy lại
+        if (!$showtime) {
+            $showtime = \App\Models\Showtime::find($data['showtime_id']);
+        }
+        
+        // Tính giá mỗi vé sau khi đã trừ đi phần giảm giá tương ứng
+        $originalPrice = $showtime->price;
+        $discountPerSeat = $discountAmount / $numSeats;
+        
+        DB::transaction(function () use (&$tickets, $data, $discount, $combo, $numSeats, $originalPrice, $discountPerSeat) {
             foreach ($data['seat_ids'] as $seatId) {
-                $price = \App\Models\Showtime::find($data['showtime_id'])->price;
-                if ($discount) {
-                    if ($discount->type === 'percent') {
-                        $price = round($price * (100 - $discount->value) / 100, 2);
-                    } else {
-                        $price = max(0, $price - $discount->value);
-                    }
-                }
+                $price = $originalPrice - $discountPerSeat;
+                
+                // Thêm giá combo nếu có
                 if ($combo) {
                     $price = round($price + ($combo->price / $numSeats), 2);
                 }

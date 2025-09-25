@@ -25,6 +25,12 @@
                 <div class="form-row">
                     <label>Giá trị</label>
                     <input type="number" step="0.01" name="value" value="{{ old('value', $discount->value) }}" required>
+                    <div class="hint">Nếu là phần trăm, nhập 10 cho 10%.</div>
+                </div>
+                <div class="form-row">
+                    <label>Giá trị đơn hàng tối thiểu</label>
+                    <input type="number" step="1000" name="min_order_value" value="{{ old('min_order_value', $discount->min_order_value) }}" placeholder="0 (không yêu cầu)">
+                    <div class="hint">Đơn hàng phải đạt giá trị tối thiểu này để áp dụng mã. Để 0 nếu không yêu cầu.</div>
                 </div>
                 <div class="form-row">
                     <label>Ngày bắt đầu</label>

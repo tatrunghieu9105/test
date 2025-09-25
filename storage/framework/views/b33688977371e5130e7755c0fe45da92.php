@@ -36,8 +36,14 @@
           <div class="muted" style="font-size:14px">Thời gian: <?php echo e(\Carbon\Carbon::parse($showtime->start_time)->format('d/m H:i')); ?></div>
           <div class="muted" style="font-size:14px">Phòng: <?php echo e(optional($showtime->room)->name); ?></div>
           <div id="selected-seats" class="muted" style="margin:8px 0; font-size:14px">Ghế: —</div>
+          <?php if($errors->any()): ?>
+            <div class="alert alert-danger" style="color: #dc2626; background-color: #fecaca; padding: 8px 12px; border-radius: 4px; margin: 8px 0; font-size: 14px;">
+              <?php echo e($errors->first()); ?>
+
+            </div>
+          <?php endif; ?>
           <div class="row" style="margin:8px 0">
-            <select name="discount_code" id="discount-select">
+            <select name="discount_code" id="discount-select" class="<?php echo e($errors->has('discount_code') ? 'border-red-500' : ''); ?>">
               <option value="" data-type="" data-value="0">-- Chọn mã giảm giá (tuỳ chọn) --</option>
               <?php $__currentLoopData = $discountCodes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <option value="<?php echo e($d->code); ?>" data-type="<?php echo e($d->type); ?>" data-value="<?php echo e($d->value); ?>">

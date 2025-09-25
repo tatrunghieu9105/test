@@ -16,6 +16,7 @@ return new class extends Migration
     $table->string('code', 50)->unique();
     $table->enum('type', ['percent', 'amount']);
     $table->decimal('value', 10, 2);
+    $table->decimal('min_order_value', 10, 2)->default(0);
     $table->date('start_date')->nullable();
     $table->date('end_date')->nullable();
     $table->timestamps();

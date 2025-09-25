@@ -140,6 +140,7 @@
                                         </div>
                                         <div>
                                             <p class="text-gray-400">Giờ chiếu</p>
+                                            <p class="text-white"><?php echo e($ticket->showtime->start_time->format('H:i')); ?></p>
                                         </div>
                                         <div>
                                             <p class="text-gray-400">Phòng</p>

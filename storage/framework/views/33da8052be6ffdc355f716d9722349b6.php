@@ -1,12 +1,10 @@
-@extends('admin.layout')
+<?php $__env->startSection('title','Tạo mã giảm giá'); ?>
+<?php $__env->startSection('page_title','Tạo mã giảm giá'); ?>
 
-@section('title','Tạo mã giảm giá')
-@section('page_title','Tạo mã giảm giá')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="card">
-        <form method="post" action="{{ route('admin.discounts.store') }}">
-            @csrf
+        <form method="post" action="<?php echo e(route('admin.discounts.store')); ?>">
+            <?php echo csrf_field(); ?>
             <div class="form-grid">
                 <div class="form-row">
                     <label>Mã</label>
@@ -27,11 +25,6 @@
                     <div class="hint">Nếu là phần trăm, nhập 10 cho 10%.</div>
                 </div>
                 <div class="form-row">
-                    <label>Giá trị đơn hàng tối thiểu</label>
-                    <input type="number" step="1000" name="min_order_value" placeholder="0 (không yêu cầu)" value="0">
-                    <div class="hint">Đơn hàng phải đạt giá trị tối thiểu này để áp dụng mã. Để 0 nếu không yêu cầu.</div>
-                </div>
-                <div class="form-row">
                     <label>Ngày bắt đầu</label>
                     <input type="date" name="start_date">
                 </div>
@@ -42,8 +35,10 @@
             </div>
             <div class="form-actions">
                 <button class="btn" type="submit">Lưu</button>
-                <a class="btn" href="{{ route('admin.discounts.index') }}" style="background:transparent;border-color:var(--border);color:var(--text)">Hủy</a>
+                <a class="btn" href="<?php echo e(route('admin.discounts.index')); ?>" style="background:transparent;border-color:var(--border);color:var(--text)">Hủy</a>
             </div>
         </form>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Admin\datn-cinema\resources\views/admin/discounts/create.blade.php ENDPATH**/ ?>
