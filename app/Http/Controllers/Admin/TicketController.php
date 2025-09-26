@@ -66,7 +66,7 @@ class TicketController extends Controller
         if ($ticket->status === 'pending_online') {
             $ticket->delete(); // giải phóng ghế (ghế sẽ được đặt lại)
         }
-        $msg = $ticket->status === 'pending_online' ? 'Đã hủy vé, ghế đã được giải phóng.' : 'Đã hủy vé, ghế vẫn giữ chỗ.';
+        $msg = $ticket->status === 'pending_online' ? 'Đã hủy vé, ghế đã được giải phóng.' : 'Đã hủy vé.';
         return redirect()->route('admin.tickets.index')->with('success', $msg);
     }
 }

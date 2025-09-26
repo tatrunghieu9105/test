@@ -4,12 +4,6 @@
 @section('page_title','Quản lý vé')
 
 @section('content')
-    @if (session('success'))
-        <div class="flash success">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="flash error">{{ session('error') }}</div>
-    @endif
 
     <div class="card" style="margin-bottom:12px">
         <form method="get" action="" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
